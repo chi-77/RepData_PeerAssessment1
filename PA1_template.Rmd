@@ -1,25 +1,91 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template"
+author: "Chi"
+date: "19/10/2020"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 ## Loading and preprocessing the data
+```{r}
+activity_data <- read.csv(unz("activity.zip", "activity.csv"))
+```
 
+## Calculate the total number of steps taken per day
+```{r}
+totalStep <- aggregate(steps ~ date, activity_data, sum)
+hist(totalStep$steps, main = "Steps Per Day", xlab="Steps")
 
+```
 
-## What is mean total number of steps taken per day?
+## Calculate the mean and median of the total number of steps taken per day
+```{r}
+mean(totalStep$steps)
+median(totalStep$steps)
+```
 
+## Average daily activity pattern
+```{r}
+stepInterval <- aggregate(steps ~ interval, activity_data, mean)
+plot(stepInterval$interval, stepInterval$steps, type = 'l', xlab = '5-Minute Interval', 
+  ylab = 'Average Number of Steps', main = 'Averaged Across All Days')
+```
 
+## Maximum number of steps in 5-minute interval
+```{r}
+stepInterval$interval[which.max(stepInterval$steps)]
+```
 
-## What is the average daily activity pattern?
+## Calculate the total number of missing values in the dataset
+```{r}
+nrow(activity_data[is.na(activity_data$steps),])
+```
 
+## Replace NAs with the mean of daily steps
+```{r}
+activity_data$steps[is.na(activity_data$steps)] <- mean(activity_data$steps[!is.na(activity_data$steps)])
+```
 
+## Calculate the total number of steps taken per day
+```{r}
+totalStep <- aggregate(steps ~ date, activity_data, sum)
+hist(totalStep$steps, main = "Steps Per Day", xlab="Steps")
+```
 
-## Imputing missing values
+## Calculate the mean and median of the total number of steps taken per day
+```{r}
+mean(totalStep$steps)
+median(totalStep$steps)
+```
 
+## Create a new factor variable in the dataset with two levels – “weekday” and “weekend”
+```{r}
+WeekLevels <- function(date) {
+	if(weekdays(as.Date(date)) %in% c("Saturday", "Sunday")) {
+		day <- "Weekend"
+	} else {
+		day <- "Weekday"
+	}
+}
+activity_data$WeekLevels <- as.factor(sapply(activity_data$date, WeekLevels))
+```
 
+## Make a panel plot
+```{r}
+weekdaysData <- activity_data[activity_data$WeekLevels == "Weekday",]
+weekendsData <- activity_data[activity_data$WeekLevels == "Weekend",]
+stepsIntervalWeekdays <- aggregate(steps ~ interval, weekdaysData, mean)
+stepsIntervalWeekends <- aggregate(steps ~ interval, weekendsData, mean)
 
-## Are there differences in activity patterns between weekdays and weekends?
+par(mfrow = c(2, 1))
+
+plot(stepsIntervalWeekdays, type = "l", col = "green", xlab = "5-minute interval", ylab="Average Number of Steps", main = "Weekdays")
+plot(stepsIntervalWeekends, type = "l", col = "red", xlab = "5-minute interval", ylab="Average Number of Steps", main = "Weekends")
+```
